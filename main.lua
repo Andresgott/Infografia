@@ -7,4 +7,4 @@
 -- Your code here
 
 local composer = require("composer")
-composer.gotoScene("solarSystem")
+composer.gotoScene("scenes.solarSystem")
