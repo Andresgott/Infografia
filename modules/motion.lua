@@ -42,7 +42,7 @@ function M.moveComet(isPlaying, sun, comet, angleComet)
     return angleComet
 end
 
-function M.playSystem(planets, moons, sun)
+function M.playSystem(planets, moons, sun, comet)
     audio.play(globals.sounds.play)
     for _, p in ipairs(planets) do
         transition.from(p, {
@@ -60,9 +60,15 @@ function M.playSystem(planets, moons, sun)
             transition = easing.outExpo
         })
     end
+    transition.from(comet, {
+        time = 1000,
+        x = sun.x,
+        y = sun.y,
+        transition = easing.outExpo
+    })
 end
 
-function M.pauseSystem(planets, moons, sun)
+function M.pauseSystem(planets, moons, sun, comet)
     audio.play(globals.sounds.pause)
     for _, p in ipairs(planets) do
         transition.to(p, {
@@ -80,6 +86,37 @@ function M.pauseSystem(planets, moons, sun)
             transition = easing.inExpo
         })
     end
+    transition.to(comet, {
+        time = 1000,
+        x = sun.x,
+        y = sun.y,
+        transition = easing.inExpo
+    })    
 end
+
+function M.initializePositions(planets, angle, radius, sun, moons, comet, angleComet)
+    -- Posicionar planetas en el centro
+    for _, p in ipairs(planets) do
+        p.x = sun.x
+        p.y = sun.y
+        if p.light then
+            p.light.x = sun.x - 10
+            p.light.y = sun.y
+            p.light.isVisible = false  
+        end
+        
+    end
+
+    -- Posicionar lunas en el centro
+    for _, moon in ipairs(moons) do
+        moon.x = sun.x
+        moon.y = sun.y
+    end
+
+    -- Posicionar cometa en el centro
+    comet.x = sun.x
+    comet.y = sun.y
+end
+
 
 return M

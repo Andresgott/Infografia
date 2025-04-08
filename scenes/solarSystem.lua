@@ -1,5 +1,5 @@
 -----------------------------------------------------------------------------------------
--- main.lua
+-- solarSystem.lua
 -----------------------------------------------------------------------------------------
 
 local composer = require("composer")
@@ -27,6 +27,17 @@ function scene:create(event)
     sceneGroup:insert(visualGroup)
     sceneGroup:insert(uiGroup)
 
+    local planetNames = {
+        "Terminus",   
+        "Trantor",    
+        "Aurora",     
+        "Helicon",    
+        "Kalgan",     
+        "Gaia",       
+        "Anacreon"    
+    }
+    
+
     -- Fondo estrellado
     ui.createStarField(visualGroup)
     ui.animateStars()
@@ -52,6 +63,9 @@ function scene:create(event)
         angle[i] = math.random(360)
         planets[i] = planet
 
+        local name = planetNames[i]
+
+
         local light = display.newCircle(planet.x - 10, planet.y, 12)
         light:setFillColor(0, 0, 0, 0.5)
         planet.light = light
@@ -63,12 +77,12 @@ function scene:create(event)
             isPlaying = false
             audio.play(globals.sounds.click)
             ui.showParticles(planet.x, planet.y)
-            popup.showPopup("Planeta " .. i, planet.y, uiGroup, function()
+            popup.showPopup(name, planet.y, uiGroup, function()
                 isPlaying = true
             end)
         end)
 
-        table.insert(toggleables, { object = planet, name = "Planeta " .. i })
+        table.insert(toggleables, { object = planet, name = name })
     end
 
     -- Lunas
@@ -109,15 +123,18 @@ function scene:create(event)
 
     table.insert(toggleables, { object = comet, name = "Cometa" })
 
+    motion.initializePositions(planets, angle, radius, sun, moons, comet, angleComet)
+
+
     -- Botones UI
     ui.createButtons(sceneGroup, visualGroup, uiGroup, toggleables,
         function()
             isPlaying = true
-            motion.playSystem(planets, moons, sun)
+            motion.playSystem(planets, moons, sun,comet)
         end,
         function()
             isPlaying = false
-            motion.pauseSystem(planets, moons, sun)
+            motion.pauseSystem(planets, moons, sun,comet)
         end
     )
 end
