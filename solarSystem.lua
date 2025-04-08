@@ -1,21 +1,18 @@
----------------------------------------------------------------------------------------- 
+----------------------------------------------------------------------------------------- 
 --
 -- main.lua
 --
 -----------------------------------------------------------------------------------------
-
--- Your code here
-
--- Solar System Scene (Corona Simulator)
 local composer = require("composer")
 local scene = composer.newScene()
 
 local CW = display.contentWidth
 local CH = display.contentHeight
-
 local isPlaying = false
 
 local sun, planets, angle, radius, moons, comet, angleComet
+local toggleables = {}
+local dropdownGroup -- nuevo grupo para el menú desplegable
 
 local function rotateSun()
     sun.rotation = sun.rotation + 0.5
@@ -30,7 +27,6 @@ local function orbitPlanets()
         p.y = sun.y + radius[i] * math.sin(rad)
     end
 end
-
 
 local function orbitMoons()
     if not isPlaying then return end
@@ -53,47 +49,23 @@ end
 
 local function playSystem()
     isPlaying = true
-    for i, p in ipairs(planets) do
-        transition.from(p, {
-            time = 1000,
-            x = sun.x,
-            y = sun.y,
-            transition = easing.outExpo
-        })
+    for _, p in ipairs(planets) do
+        transition.from(p, {time = 1000, x = sun.x, y = sun.y, transition = easing.outExpo})
     end
     for _, moon in ipairs(moons) do
-        transition.from(moon, {
-            time = 1000,
-            x = sun.x,
-            y = sun.y,
-            transition = easing.outExpo
-        })
-    end    
+        transition.from(moon, {time = 1000, x = sun.x, y = sun.y, transition = easing.outExpo})
+    end
 end
-
 
 local function pauseSystem()
     isPlaying = false
-    for i, p in ipairs(planets) do
-        transition.to(p, {
-            time = 1000,
-            x = sun.x,
-            y = sun.y,
-            transition = easing.inExpo
-        })
+    for _, p in ipairs(planets) do
+        transition.to(p, {time = 1000, x = sun.x, y = sun.y, transition = easing.inExpo})
     end
     for _, moon in ipairs(moons) do
-        transition.to(moon, {
-            time = 1000,
-            x = sun.x,
-            y = sun.y,
-            transition = easing.inExpo
-        })
+        transition.to(moon, {time = 1000, x = sun.x, y = sun.y, transition = easing.inExpo})
     end
-    
-
 end
-
 
 function scene:create(event)
     local sceneGroup = self.view
@@ -105,17 +77,16 @@ function scene:create(event)
     sun.x = CW / 2
     sun.y = CH / 2
 
-
     planets = {}
     angle = {}
     radius = {100, 130, 160, 190, 220, 250, 280}
-
     for i = 1, 7 do
         local p = display.newImageRect(sceneGroup, "planeta" .. i .. ".png", 30, 30)
         p.x = sun.x
         p.y = sun.y
         angle[i] = math.random(360)
         planets[i] = p
+        table.insert(toggleables, {object = p, name = "Planeta " .. i})
         sceneGroup:insert(p)
     end
 
@@ -126,13 +97,14 @@ function scene:create(event)
         moon.angle = math.random(360)
         moon.radius = 15
         table.insert(moons, moon)
+        table.insert(toggleables, {object = moon, name = "Luna " .. i})
     end
 
     comet = display.newImageRect(sceneGroup, "cometa.png", 30, 30)
     comet.x, comet.y = CW / 2, CH / 2
     angleComet = 0
+    table.insert(toggleables, {object = comet, name = "Cometa"})
 
-    -- Botones
     local playBtn = display.newText({text = "Play", x = 60, y = 30, fontSize = 18})
     playBtn:addEventListener("tap", playSystem)
     sceneGroup:insert(playBtn)
@@ -141,65 +113,60 @@ function scene:create(event)
     pauseBtn:addEventListener("tap", pauseSystem)
     sceneGroup:insert(pauseBtn)
 
-    toggleables = {}
-
-    -- Añadir planetas
-    for i, p in ipairs(planets) do
-        table.insert(toggleables, {object = p, name = "Planeta " .. i})
-    end
-    
-    -- Añadir lunas
-    for i, moon in ipairs(moons) do
-        table.insert(toggleables, {object = moon, name = "Luna " .. i})
-    end
-    
-    -- Añadir cometa
-    table.insert(toggleables, {object = comet, name = "Cometa"})
-
     local toggleBtn = display.newText({
         text = "Toggle Element ▼",
-        x = CW-60,
+        x = CW - 80,
         y = 30,
         fontSize = 14
     })
     sceneGroup:insert(toggleBtn)
-    
-    local dropdownItems = {}  -- Aquí se guardan los botones del menú
-    
+
+    local dropdownVisible = false
+    dropdownGroup = display.newGroup()
+    sceneGroup:insert(dropdownGroup)
+
     local function hideDropdown()
-        for _, btn in ipairs(dropdownItems) do
-            btn:removeSelf()
-        end
-        dropdownItems = {}
+        dropdownGroup:removeSelf()
+        dropdownGroup = display.newGroup()
+        sceneGroup:insert(dropdownGroup)
+        dropdownVisible = false
     end
-    
+
     local function showDropdown()
         hideDropdown()
+        local itemHeight = 25
+        local menuWidth, menuHeight = 160, #toggleables * itemHeight + 10
+        local bg = display.newRoundedRect(dropdownGroup, toggleBtn.x, toggleBtn.y + menuHeight / 2, menuWidth, menuHeight, 12)
+        bg:setFillColor(0, 0, 0.6, 0.8)
+        bg.strokeWidth = 2
+        bg:setStrokeColor(1, 1, 1, 0.6)
+
         for i, entry in ipairs(toggleables) do
-            local btn = display.newText({
-                text = entry.name,
+            local isVisible = entry.object.isVisible
+            local icon = isVisible and "✅" or "❌"
+            local label = display.newText({
+                text = icon .. " " .. entry.name,
                 x = toggleBtn.x,
-                y = toggleBtn.y + i * 25,
+                y = toggleBtn.y + 10 + i * itemHeight,
                 fontSize = 14
             })
-            sceneGroup:insert(btn)
-            btn:addEventListener("tap", function()
+            label:setFillColor(1, 1, 1)
+            label:addEventListener("tap", function()
                 entry.object.isVisible = not entry.object.isVisible
-                hideDropdown()
+                showDropdown() -- refresh menu
             end)
-            table.insert(dropdownItems, btn)
+            dropdownGroup:insert(label)
         end
+        dropdownVisible = true
     end
-    
+
     toggleBtn:addEventListener("tap", function()
-        if #dropdownItems == 0 then
-            showDropdown()
-        else
+        if dropdownVisible then
             hideDropdown()
+        else
+            showDropdown()
         end
     end)
-    
-
 end
 
 function scene:show(event)
